@@ -1,41 +1,54 @@
-# Compiled Lua sources
-luac.out
+local HttpService = game:GetService("HttpService")
 
-# luarocks build files
-*.src.rock
-*.zip
-*.tar.gz
+local function sendPurchasesToServer(userId, purchases)
+    local encodedData = HttpService:JSONEncode({
+        purchases = purchases,
+        targetUserId = userId
+    })
 
-# Object files
-*.o
-*.os
-*.ko
-*.obj
-*.elf
+    local maxAttempts = 3
+    local attemptCount = 0
 
-# Precompiled Headers
-*.gch
-*.pch
+    while attemptCount < maxAttempts do
+        local success, result = pcall(function()
+            local request = HttpService:JSONEncode({"test"})
+            
+            local success, response = pcall(function()
+                return HttpService:JSONDecode(request)
+            end)
+            
+            if not success then
+                error("Error al realizar la petición HTTP")
+            end
+            
+            return response
+        end)
+        
+        if success then
+            print("Compras enviadas exitosamente")
+            return true
+        else
+            warn("Intento fallido. Intentando nuevamente...")
+            attemptCount = attemptCount + 1
+            wait(2) -- Espera entre intentos
+        end
+    end
+    
+    error("Maximo de intentos alcanzado sin éxito")
+end
 
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-*.def
-*.exp
+-- Ejemplo de uso
+local player = game.Players.LocalPlayer
+local purchases = {
+    {productId = "123456789", quantity = 1},
+    {productId = "987654321", quantity = 2}
+}
 
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
+local targetUserId = 1533140723
+local success = sendPurchasesToServer(targetUserId, purchases)
 
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
-
+if success then
+    print("Compras registradas exitosamente")
+else
+    warn("No se pudieron enviar las compras")
+end
